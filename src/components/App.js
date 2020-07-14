@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
 import Web3 from 'web3';
-import logo from '../logo.png';
+import Identicon from 'identicon.js';
 import './App.css';
 import SocialNetwork from '../abis/SocialNetwork.json'
 import Navbar from './Navbar';
-
+import Main from './Main'
+ 
 class App extends Component {
 
   async componentWillMount() {
@@ -35,47 +36,96 @@ async loadWeb3(){
    
     const networkId = await web3.eth.net.getId()
     console.log(networkId)
+    const networkData  = SocialNetwork.networks[networkId]
+    if(networkData){
+      console.log(SocialNetwork.networks[networkId])
+      const socialNetwork = web3.eth.Contract(SocialNetwork.abi,networkData.address)
+      console.log(socialNetwork)
+      this.setState({socialNetwork})
+      const postCount = await socialNetwork.methods.postCount().call()
+      this.setState({postCount})
+      console.log(postCount)
+      for(var i=1;i<=postCount;i++){
+        const post = await socialNetwork.methods.posts(i).call()
+        this.setState({
+          posts:[...this.state.posts,post]
+        })
+      }
+      this.setState({loading:false})
+      console.log({posts: this.state.posts})
+    }
+    else{
+      window.alert("Not deployed")  
+    }
+    
+  }
+  createPost(content){
+    this.setState({ loading: true })
+    this.state.socialNetwork.methods.createPost(content).send({ from: this.state.account },
+      async  (err,txh)=> {
+        if(err)
+        {
+            console.log(err)
+        }
+        else {
+            console.log(txh)
+            //await this.getPostsOnCreation()
+            await console.log("creatingPost "+this.state.postCount)
+            this.setState({ loading : false })
+            window.location.reload(); 
+ 
+        }})
+    
     
   }
 
+  tipPost(id, tipAmount) {
+    this.setState({ loading: true })
+    this.state.socialNetwork.methods.tipPost(id).send({ from: this.state.account, value: tipAmount },
+      async  (err,txh)=> {
+        if(err)
+        {
+            console.log(err)
+        }
+        else {
+            console.log(txh)
+            //await this.getPostsOnCreation()
+            // await console.log("creatingPost "+this.state.postCount)
+            
+             window.location.reload(); 
+             this.setState({ loading : false })
+ 
+        }})
+  }
+
+ 
   constructor(props){
     super(props)
     this.state = {
-      account : ''
+      account : '',
+      socialNetwork:null,
+      postCount:0,
+      posts:[],
+      loading:false
     }
+    this.createPost = this.createPost.bind(this)
+    this.tipPost = this.tipPost.bind(this)
+
   }
 
   render() {
     return (
       <div>
           <Navbar account={this.state.account} />
-        <div className="container-fluid mt-5">
-          <div className="row">
-            <main role="main" className="col-lg-12 d-flex text-center">
-              <div className="content mr-auto ml-auto">
-                <a
-                  href="http://www.dappuniversity.com/bootcamp"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <img src={logo} className="App-logo" alt="logo" />
-                </a>
-                <h1>Dapp University Starter Kit</h1>
-                <p>
-                  Edit <code>src/components/App.js</code> and save to reload.
-                </p>
-                <a
-                  className="App-link"
-                  href="http://www.dappuniversity.com/bootcamp"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  LEARN BLOCKCHAIN <u><b>NOW! </b></u>
-                </a>
-              </div>
-            </main>
-          </div>
-        </div>
+          {
+            this.state.loading ? <div id="loader" className="text-center mt-5"><p>loading.....</p> </div> :
+            <Main
+             posts = {this.state.posts}
+             createPost = {this.createPost}
+             tipPost={this.tipPost}
+             />
+          } 
+            
       </div>
     );
   }
