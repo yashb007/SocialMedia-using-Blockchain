@@ -72,7 +72,7 @@ async loadWeb3(){
             //await this.getPostsOnCreation()
             await console.log("creatingPost "+this.state.postCount)
             this.setState({ loading : false })
-            window.location.reload(); 
+           // window.location.reload(); 
  
         }})
     
@@ -92,7 +92,7 @@ async loadWeb3(){
             //await this.getPostsOnCreation()
             // await console.log("creatingPost "+this.state.postCount)
             
-             window.location.reload(); 
+            // window.location.reload(); 
              this.setState({ loading : false })
  
         }})
